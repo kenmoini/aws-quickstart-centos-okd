@@ -249,17 +249,6 @@ Parameters:
     MinLength: '8'
     AllowedPattern: ^[^ \\']+$
     NoEcho: 'true'
-  RedhatSubscriptionUserName:
-    Description: Enter Redhat RHN User Name
-    Type: String
-  RedhatSubscriptionPassword:
-    NoEcho: 'true'
-    Description: Enter Redhat RHN Password
-    Type: String
-    AllowedPattern: ^[^ \\']+$
-  RedhatSubscriptionPoolID:
-    Description: Enter Redhat RHN PoolID
-    Type: String
   OpenshiftContainerPlatformVersion:
     Description: OpenShift version to deploy
     Default: '3.11'
@@ -353,15 +342,15 @@ Parameters:
     Description: Type of EC2 instance for the Node instances
     Type: String
   NumberOfMaster:
-    Default: '3'
-    Description: This Deployment requires at least 3 OpenShift Master instances
+    Default: '1'
+    Description: This Deployment requires 1 or at least 3 OpenShift Master instances
     Type: String
-    AllowedPattern: '^[3579]$|(^[1-9]+[13579]$)'
+    AllowedPattern: '^[13579]$|(^[1-9]+[13579]$)'
   NumberOfEtcd:
-    Default: '3'
-    Description: This Deployment requires at least 3 OpenShift Etcd instances
+    Default: '0'
+    Description: This Deployment requires 0 or at least 3 OpenShift Etcd instances
     Type: String
-    AllowedPattern: '^[3579]$|(^[1-9]+[13579]$)'
+    AllowedPattern: '^[03579]$|(^[0-9]+[013579]$)'
   NumberOfNodes:
     Default: '3'
     Description: The desired capacity for the OpenShift node instances
