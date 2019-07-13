@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: '(qs-1nltbq5f3) OpenShift+VPC, License: Apache 2.0 (Please do not remove)
+Description: '(qs-1nltbq5f3) OKD+VPC, License: Apache 2.0 (Please do not remove)
   April, 6, 2018'
 Metadata:
   AWSAMIRegionMap:
     Filters:
-      RHEL76HVM:
-        name: RHEL-7.6_HVM_GA-20??????-x86_64-0-Hourly2-GP2
-        owner-id: "309956199498"
+      CENTOS76HVM:
+        name: "CentOS Linux 7 x86_64 HVM EBS ENA 1901_01??????"
+        owner-id: "679593333241"
         architecture: x86_64
         virtualization-type: hvm
   AWS::CloudFormation::Interface:
@@ -106,12 +106,6 @@ Metadata:
         default: VPC CIDR
       OpenShiftAdminPassword:
         default: OpenShift UI Password
-      RedhatSubscriptionUserName:
-        default: Red Hat Subscription User Name
-      RedhatSubscriptionPassword:
-        default: Red Hat Subscription Password
-      RedhatSubscriptionPoolID:
-        default: Red Hat Pool ID
       OpenshiftContainerPlatformVersion:
         default: Openshift Container Platform Version
       MasterInstanceType:
@@ -169,7 +163,7 @@ Parameters:
       need to bring your own AMI (with proxy, softwares, ...).
       If the AMI is encrypted, keep in mind that the key policy should allow use of
       the key from AWSServiceRoleForAutoScaling.
-      If left blank, we'll use the base RHEL image from your region.
+      If left blank, we'll use the base CentOS image from your region.
     Type: String
     Default: ""
   KeyPairName:
@@ -238,17 +232,6 @@ Parameters:
     MinLength: '8'
     AllowedPattern: ^[^ \\']+$
     NoEcho: 'true'
-  RedhatSubscriptionUserName:
-    Description: Enter Redhat RHN User Name
-    Type: String
-  RedhatSubscriptionPassword:
-    NoEcho: 'true'
-    Description: Enter Redhat RHN Password
-    Type: String
-    AllowedPattern: ^[^ \\']+$
-  RedhatSubscriptionPoolID:
-    Description: Enter Redhat RHN PoolID
-    Type: String
   OpenshiftContainerPlatformVersion:
     Description: OpenShift version to deploy
     Default: '3.11'
@@ -353,10 +336,10 @@ Parameters:
     Type: String
     AllowedPattern: '^[3579]$|(^[1-9]+[13579]$)'
   NumberOfEtcd:
-    Default: '3'
-    Description: This Deployment requires 3 OpenShift Etcd instances
+    Default: '0'
+    Description: This Deployment requires 0, or 3 [+(n*2)] OpenShift Etcd instances
     Type: String
-    AllowedPattern: '^[3579]$|(^[1-9]+[13579]$)'
+    AllowedPattern: '^[03579]$|(^[0-9]+[013579]$)'
   NumberOfNodes:
     Default: '3'
     Description: The desired capacity for the OpenShift node instances
@@ -403,8 +386,8 @@ Parameters:
       - Enabled
       - Disabled
   AnsibleFromGit:
-    Default: "False"
-    Description: Get openshift installer playbooks from GitHub. By default, they come from RPM.
+    Default: "True"
+    Description: Get openshift installer playbooks from GitHub. Alternatively, they come from RPM.
     Type: String
     AllowedValues:
       - "True"
@@ -481,33 +464,33 @@ Rules:
 Mappings:
   AWSAMIRegionMap:
     eu-central-1:
-      RHEL76HVM: ami-09de4a4c670389e4b
+      CENTOS76HVM: ami-04cf43aca3e6f3de3
     ap-southeast-2:
-      RHEL76HVM: ami-036b423b657376f5b
+      CENTOS76HVM: ami-08bd00d7713a39e7d
     eu-west-1:
-      RHEL76HVM: ami-0202869bdd0fc8c75
+      CENTOS76HVM: ami-0ff760d16d9497662
     us-east-1:
-      RHEL76HVM: ami-000db10762d0c4c05
+      CENTOS76HVM: ami-02eac2c0129f6376b
     us-east-2:
-      RHEL76HVM: ami-094720ddca649952f
+      CENTOS76HVM: ami-0f2b4fc905b0bd1f1
     us-west-2:
-      RHEL76HVM: ami-0a7e1ebfee7a4570e
+      CENTOS76HVM: ami-01ed306a12b7d1c96
     ap-northeast-1:
-      RHEL76HVM: ami-00b95502a4d51a07e
+      CENTOS76HVM: ami-045f38c93733dd48d
     eu-west-2:
-      RHEL76HVM: ami-0188c0c5eddd2d032
+      CENTOS76HVM: ami-0eab3a90fc693af19
     eu-west-3:
-      RHEL76HVM: ami-0c4224e392ec4e440
+      CENTOS76HVM: ami-0e1ab783dc9489f34
     ap-southeast-1:
-      RHEL76HVM: ami-055c55112e25b1f1f
+      CENTOS76HVM: ami-0b4dd9d65556cac22
     eu-north-1:
-      RHEL76HVM: ami-66f67f18
+      CENTOS76HVM: ami-5ee66f20
     ap-south-1:
-      RHEL76HVM: ami-0963937a03c01ecd4
+      CENTOS76HVM: ami-02e60be79e78fef21
     ap-northeast-2:
-      RHEL76HVM: ami-041b16ca28f036753
+      CENTOS76HVM: ami-06cf2a72dadf92410
     sa-east-1:
-      RHEL76HVM: ami-05c1c16cac05a7c0b
+      CENTOS76HVM: ami-0b8d86d4bf91850af
   OpenshiftVersionMap:
     '3.11':
       AnsiblePlaybookGitRepoTag: 3.11.112-1
@@ -596,10 +579,6 @@ Resources:
     Type: "AWS::SecretsManager::Secret"
     Properties:
       SecretString: !Ref OpenShiftAdminPassword
-  RedhatSubscriptionSecret:
-    Type: "AWS::SecretsManager::Secret"
-    Properties:
-      SecretString: !Sub '{"user":"${RedhatSubscriptionUserName}","password":"${RedhatSubscriptionPassword}","poolid":"${RedhatSubscriptionPoolID}"}'
   RegistryBucket:
     Type: "AWS::S3::Bucket"
   Route53HostedSubdomainZone:
@@ -1320,7 +1299,7 @@ Resources:
         - !Ref 'OpenShiftMasterELB'
       DesiredCapacity: !Ref 'NumberOfMaster'
       MaxSize: !Ref 'NumberOfMaster'
-      MinSize: '2'
+      MinSize: '1'
       HealthCheckType: ELB
       HealthCheckGracePeriod: 2400
       LaunchConfigurationName: !Ref 'OpenShiftMasterASLaunchConfig'
@@ -1351,8 +1330,8 @@ Resources:
       - CleanupPV
     Properties:
       DesiredCapacity: !Ref 'NumberOfEtcd'
-      MaxSize: !Ref 'NumberOfEtcd'
-      MinSize: '2'
+      MaxSize: '3'
+      MinSize: '0'
       LaunchConfigurationName: !Ref 'OpenShiftEtcdLaunchConfig'
       Tags:
         - Key: Name
@@ -1473,7 +1452,7 @@ Resources:
         - !FindInMap
           - AWSAMIRegionMap
           - !Ref 'AWS::Region'
-          - RHEL76HVM
+          - CENTOS76HVM
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
@@ -1508,9 +1487,6 @@ Resources:
             export QS_S3URI=s3://${QSS3BucketName}/${QSS3KeyPrefix}
             export AWS_REGION=${AWS::Region}
             export AWS_STACKNAME=${AWS::StackName}
-            export RH_POOLID=${RedhatSubscriptionPoolID}
-            export RH_USER=${RedhatSubscriptionUserName}
-            export RH_CREDS_ARN='${RedhatSubscriptionSecret}'
             export OCP_VERSION=${OpenshiftContainerPlatformVersion}
             export LAUNCH_CONFIG=OpenShiftGlusterLaunchConfig
             export LOG_GROUP=${OpenshiftLogGroup}
@@ -1561,7 +1537,7 @@ Resources:
         - !FindInMap
           - AWSAMIRegionMap
           - !Ref 'AWS::Region'
-          - RHEL76HVM
+          - CENTOS76HVM
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
@@ -1587,9 +1563,6 @@ Resources:
             export QS_S3URI=s3://${QSS3BucketName}/${QSS3KeyPrefix}
             export AWS_REGION=${AWS::Region}
             export AWS_STACKNAME=${AWS::StackName}
-            export RH_POOLID=${RedhatSubscriptionPoolID}
-            export RH_USER=${RedhatSubscriptionUserName}
-            export RH_CREDS_ARN='${RedhatSubscriptionSecret}'
             export OCP_VERSION=${OpenshiftContainerPlatformVersion}
             export LAUNCH_CONFIG=OpenShiftEtcdLaunchConfig
             export LOG_GROUP=${OpenshiftLogGroup}
@@ -1640,7 +1613,7 @@ Resources:
         - !FindInMap
           - AWSAMIRegionMap
           - !Ref 'AWS::Region'
-          - RHEL76HVM
+          - CENTOS76HVM
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
@@ -1670,9 +1643,6 @@ Resources:
             export QS_S3URI=s3://${QSS3BucketName}/${QSS3KeyPrefix}
             export AWS_REGION=${AWS::Region}
             export AWS_STACKNAME=${AWS::StackName}
-            export RH_POOLID=${RedhatSubscriptionPoolID}
-            export RH_USER=${RedhatSubscriptionUserName}
-            export RH_CREDS_ARN='${RedhatSubscriptionSecret}'
             export OCP_VERSION=${OpenshiftContainerPlatformVersion}
             export LAUNCH_CONFIG=OpenShiftNodesLaunchConfig
             export LOG_GROUP=${OpenshiftLogGroup}
@@ -1723,7 +1693,7 @@ Resources:
         - !FindInMap
           - AWSAMIRegionMap
           - !Ref 'AWS::Region'
-          - RHEL76HVM
+          - CENTOS76HVM
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
@@ -1753,9 +1723,6 @@ Resources:
             export QS_S3URI=s3://${QSS3BucketName}/${QSS3KeyPrefix}
             export AWS_REGION=${AWS::Region}
             export AWS_STACKNAME=${AWS::StackName}
-            export RH_POOLID=${RedhatSubscriptionPoolID}
-            export RH_USER=${RedhatSubscriptionUserName}
-            export RH_CREDS_ARN='${RedhatSubscriptionSecret}'
             export OCP_VERSION=${OpenshiftContainerPlatformVersion}
             export LAUNCH_CONFIG=OpenShiftMasterASLaunchConfig
             export INTERNAL_MASTER_ELBDNSNAME=${OpenShiftMasterInternalELB.DNSName}
@@ -2114,7 +2081,7 @@ Resources:
         - !FindInMap
           - AWSAMIRegionMap
           - !Ref 'AWS::Region'
-          - RHEL76HVM
+          - CENTOS76HVM
       IamInstanceProfile: !Ref 'SetupRoleProfile'
       Tags:
         - Key: Name
@@ -2143,9 +2110,6 @@ Resources:
             export CONTAINERACCESSELB=${ContainerAccessELB}
             export OCP_VERSION=${OpenshiftContainerPlatformVersion}
             export ANSIBLE_VERSION=${AnsibleVersion}
-            export RH_USER=${RedhatSubscriptionUserName}
-            export RH_CREDS_ARN='${RedhatSubscriptionSecret}'
-            export RH_POOLID=${RedhatSubscriptionPoolID}
             export AWS_STACKNAME=${AWS::StackName}
             export QS_S3URI=s3://${QSS3BucketName}/${QSS3KeyPrefix}
             export OCP_PASS_ARN='${OpenShiftPasswordSecret}'
