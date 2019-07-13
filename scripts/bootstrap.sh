@@ -34,10 +34,11 @@ fi
 
 qs_enable_epel &> /var/log/userdata.qs_enable_epel.log || true
 
-qs_retry_command 10 yum -y install jq
-qs_retry_command 25 aws s3 cp ${QS_S3URI}scripts/redhat_ose-register-${OCP_VERSION}.sh ~/redhat_ose-register.sh
-chmod 755 ~/redhat_ose-register.sh
-qs_retry_command 25 ~/redhat_ose-register.sh ${RH_CREDS_ARN}
+qs_retry_command 10 yum -y install jq epel-release
+#No need to do the RH SM Reg on CentOS
+#qs_retry_command 25 aws s3 cp ${QS_S3URI}scripts/redhat_ose-register-${OCP_VERSION}.sh ~/redhat_ose-register.sh
+#chmod 755 ~/redhat_ose-register.sh
+#qs_retry_command 25 ~/redhat_ose-register.sh ${RH_CREDS_ARN}
 
 mkdir -p /etc/aws/
 printf "[Global]\nZone = $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)\n" > /etc/aws/aws.conf
@@ -54,7 +55,8 @@ fi
 fdisk -l
 
 if [ "${LAUNCH_CONFIG}" != "OpenShiftEtcdLaunchConfig" ]; then
-    qs_retry_command 10 yum install docker-client-1.13.1 docker-common-1.13.1 docker-rhel-push-plugin-1.13.1 docker-1.13.1 -y
+    #qs_retry_command 10 yum install docker-client-1.13.1 docker-common-1.13.1 docker-rhel-push-plugin-1.13.1 docker-1.13.1 -y
+    qs_retry_command 10 yum install docker-client-1.13.1 docker-common-1.13.1 docker-1.13.1 -y
     systemctl enable docker.service
     qs_retry_command 20 'systemctl start docker.service'
     echo "CONTAINER_THINPOOL=docker-pool" >> /etc/sysconfig/docker-storage-setup
